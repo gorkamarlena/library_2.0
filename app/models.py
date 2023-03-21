@@ -1,22 +1,45 @@
-# app/models.py
-from datetime import datetime
-from app import db
+from . import db
 
-class User(db.Model):
-   id = db.Column(db.Integer, primary_key=True)
-   username = db.Column(db.String(100), index=True, unique=True)
-   email = db.Column(db.String(200), index=True, unique=True)
-   password_hash = db.Column(db.String(128))
-   posts = db.relationship("Post", backref="author", lazy="dynamic")
+from sqlalchemy.ext.declarative import declarative_base
+from sqlalchemy.orm import sessionmaker
+from sqlalchemy import create_engine
 
-   def __str__(self):
-       return f"<User {self.username}>"
-   
-class Post(db.Model):
-   id = db.Column(db.Integer, primary_key=True)
-   body = db.Column(db.Text)
-   created = db.Column(db.DateTime, index=True, default=datetime.utcnow)
-   user_id = db.Column(db.Integer, db.ForeignKey('user.id'))
+Base = declarative_base()
 
-   def __str__(self):
-       return f"<Post {self.id} {self.body[:50]} ...>"
+book_author = db.Table('book_author',
+    db.Column('book_id', db.ForeignKey('book.id')),
+    db.Column('author_id', db.ForeignKey('author.id'))
+)
+
+class Book(db.Model):
+    __tablename__  = 'book'
+    id = db.Column(db.Integer, primary_key = True)
+    title = db.Column(db.String(100), index = True)
+    authors = db.relationship('Author', secondary = book_author, backref ='books', lazy = 'dynamic')
+    is_available = db.Column(db.Boolean, default=True)
+
+    def __str__(self):
+        return self.title
+
+    def __repr__(self):
+        return self.title
+    
+class Author(db.Model):
+    __tablename__ = 'author'
+    id = db.Column(db.Integer, primary_key = True)
+    name = db.Column(db.String(100), unique = False)
+    surname = db.Column(db.String(100), unique = False)
+
+    def __str__(self):
+        return f'{self.name} {self.surname}'
+
+    def __repr__(self):
+        return f'{self.name} {self.surname}'
+
+class Borrow(db.Model):
+    __tablename__ ='availability'
+    id = db.Column(db.Integer, primary_key = True)
+    book = db.Column(db.Integer, db.ForeignKey('book.id'))
+    date_borrow = db.Column(db.String(10))
+    date_return = db.Column(db.String(10))
+    books = db.relationship('Book', backref = 'borrows')
